@@ -282,6 +282,116 @@ if(!("FileName" %in% colnames(sequence_data))){
 }
 
 
+
+#################
+## Isotopologue Number Submission Sheet
+#################
+
+isotopologue_read_check <- function(metadata_file_path){
+  
+  try_result <- try(Isotopologue_Database <- read.xlsx_or_csv(metadata_file_path, header = TRUE, stringsAsFactors = FALSE, skip = 20, sheet = "ICMS_Isotopologue_Submission"))
+  
+  ## Check to see if there were any errors when reading in.
+  if(class(try_result) == "try-error"){
+    tt <- tktoplevel()
+    message_font <- tkfont.create(family = "Times New Roman", size = 14)
+    tkwm.title(tt, "Isotopologue Database Read Error")
+    tkgrid(ttklabel(tt, image = error_icon),
+           ttklabel(tt, text = paste("Error when reading in the \"ICMS_Isotopologue_Submission\" sheet in the meta data file:\n\n", try_result[1]),
+                    font = message_font), padx = 20, pady = 20)
+    close_box <- function(){
+      tkdestroy(tt)
+    }
+    tkgrid(tkbutton(tt, text='Okay', command = close_box), columnspan = 2)
+    tkwait.window(tt)
+    stop()
+  }
+  
+  return(Isotopologue_Database)
+}
+
+
+isotopologue_empty_check <- function(Isotopologue_Database){
+  
+  ## Check to see if there is data in the file.
+  if(nrow(Isotopologue_Database) == 0){
+    tt <- tktoplevel()
+    message_font <- tkfont.create(family = "Times New Roman", size = 14)
+    tkwm.title(tt, "Isotopologue Database Error")
+    tkgrid(ttklabel(tt, image = error_icon),
+           ttklabel(tt, text = "The \"ICMS_Isotopologue_Submission\" sheet in the meta data file is empty. \nPlease supply a non-empty sheet.",
+                    font = message_font), padx = 20, pady = 20)
+    close_box <- function(){
+      tkdestroy(tt)
+    }
+    tkgrid(tkbutton(tt, text='Okay', command = close_box), columnspan = 2)
+    tkwait.window(tt)
+    stop()
+  }
+  
+}
+
+
+isotopologue_column_check <- function(Isotopologue_Database){
+  ## Make sure it has the correct columns. If it doesn't have all of the columns then give the user a message box and quit the program.
+  if(Labelling == "C13"){
+    required_columns = c("CompoundName", "mz", "C_Isotopologue")
+  }
+  else if (Labelling == "C13N15"){
+    required_columns = c("CompoundName", "mz", "C_Isotopologue", "N_Isototpologue")
+  }
+  
+  
+  if(!all(required_columns %in% colnames(Isotopologue_Database))){
+    
+    ## Create a message box.
+    tt <- tktoplevel()
+    message_font <- tkfont.create(family = "Times New Roman", size = 14)
+    tkwm.title(tt, "Isotopologue Database Error")
+    tkgrid(ttklabel(tt, image = error_icon),
+           ttklabel(tt, text = paste("The \"ICMS_Isotopologue_Submission\" sheet in the meta data file did not have the correct column names. \nThere should be column names for:\n\n", paste(required_columns, collapse="\n"), "\n\nThese names are case sensitive.", sep=""),
+                    font = message_font), padx = 20, pady = 20)
+    close_box <- function(){
+      tkdestroy(tt)
+    }
+    tkgrid(tkbutton(tt, text='Okay', command = close_box), columnspan = 2)
+    tkwait.window(tt)
+    stop()
+  }
+  
+  Isotopologue_Database <- Isotopologue_Database[!is.na(Isotopologue_Database$CompoundName),]
+  Isotopologue_Database <- Isotopologue_Database[,required_columns]
+  
+  return(Isotopologue_Database)
+}
+
+
+## Check to make sure that every CompoundName has data in every column. This function assumes that there are no NA values for the 
+## CompoundName column since they are removed with an earlier function. It also assumes that the data only has the columns we need
+## since an earlier function also strips off any extra columns.
+isotopologue_values_check <- function(Isotopologue_Database){
+  if(any(is.na(Isotopologue_Database))){
+    
+    ## Create a message box.
+    tt <- tktoplevel()
+    message_font <- tkfont.create(family = "Times New Roman", size = 14)
+    tkwm.title(tt, "Isotopologue Database Error")
+    tkgrid(ttklabel(tt, image = error_icon),
+           ttklabel(tt, text = "The \"ICMS_Isotopologue_Submission\" sheet in the meta data file does not have data for every CompoundName. \nMake sure every column has values for every CompoundName.",
+                    font = message_font), padx = 20, pady = 20)
+    close_box <- function(){
+      tkdestroy(tt)
+    }
+    tkgrid(tkbutton(tt, text='Okay', command = close_box), columnspan = 2)
+    tkwait.window(tt)
+    stop()
+  }
+}
+
+
+
+
+
 ##########################
 ## TraceFinder Reports for Every Sample in MetaData
 ##########################
@@ -453,7 +563,7 @@ report_empty_check <- function(TempMatrix, TF_File){
 
 report_column_check <- function(TempMatrix, TF_File){
   ## Make sure it has the correct columns. If it doesn't have all of the columns then give the user a message box and quit the program.
-  if(!all(c("Target.Compounds", "Formula", "Peak.Area") %in% colnames(TempMatrix))){
+  if(!all(c("Target.Compounds", "Quan.Peak", "Formula", "Peak.Area") %in% colnames(TempMatrix))){
     
     ## Create a message box.
     tt <- tktoplevel()
@@ -470,51 +580,22 @@ report_column_check <- function(TempMatrix, TF_File){
     stop()
   }
   
-  TempMatrix <- TempMatrix[!is.na(TempMatrix$Target.Compound),]
+  TempMatrix <- TempMatrix[!is.na(TempMatrix$Target.Compounds),]
   TempMatrix <- TempMatrix[!TempMatrix$Target.Compounds == "",]
   
   return(TempMatrix)
 }
 
 
-##########################
-## TraceFinder Reports All Have the Same Type of Labeling
-##########################
-
-
-TF_labeling_check <- function(TF_labeling_type){
-
-  ## Make sure all TF files have the same labeling and set labeling to that type.
-  if(any(TF_labeling_type$Labeling != TF_labeling_type$Labeling[1])){
-    
-    tt <- tktoplevel()
-    tkfocus(tt)
-    message_font <- tkfont.create(family = "Times New Roman", size = 14)
-    tkwm.title(tt, "Labeling Error")
-    tkgrid(ttklabel(tt, image = error_icon),
-           ttklabel(tt, text = "Not all TraceFinder files have the same type of labeling.\nPlease submit TraceFinder files with the same type of labeling.",
-                    font = message_font), padx = 20, pady = 20)
-    close_box <- function(){
-      tkdestroy(tt)
-    }
-    tkgrid(tkbutton(tt, text='Okay', command = close_box), columnspan = 2)
-    tkwait.window(tt)
-    
-    stop()
-  }
-    
-}
 
 
 ############################
 ## Check that every unique compound has a formula.
 ############################
 
-formulas_check <- function(TF_Report, CompoundListNoLabelling){
+formulas_check <- function(TF_Report){
   
   Temp <- TF_Report
-  Temp$NoLabelling <- CompoundListNoLabelling
-  Temp <- Temp[!duplicated(Temp$NoLabelling),]
   if (any(Temp$Formula == "")){
     compounds <- Temp$Target.Compound[Temp$Formula == ""]
     tt <- tktoplevel()
@@ -534,3 +615,33 @@ formulas_check <- function(TF_Report, CompoundListNoLabelling){
     
   }
 }
+
+
+############################
+## Check that every compound is in the isotopologue database.
+############################
+
+isotpologue_check <- function(TF_Report, Isotopologue_Database){
+  
+  if (!all(TF_Report[,c("Target.Compounds","Quan.Peak")] %in% Isotopologue_Database[, c("CompoundName", "mz")])){
+    
+    compounds <- TF_Report[!TF_Report[,c("Target.Compounds","Quan.Peak")] %in% Isotopologue_Database[, c("CompoundName", "mz")]]
+    tt <- tktoplevel()
+    tkfocus(tt)
+    message_font <- tkfont.create(family = "Times New Roman", size = 14)
+    tkwm.title(tt, "Compound Error")
+    tkgrid(ttklabel(tt, image = error_icon),
+           ttklabel(tt, text = paste("Not every compound in the TraceFinder files have a matching entry in the ICMS_Isotopologue_Submission sheet. \nThe compounds are:\n", paste(compounds, collapse = "\n")),
+                    font = message_font), padx = 20, pady = 20)
+    close_box <- function(){
+      tkdestroy(tt)
+    }
+    tkgrid(tkbutton(tt, text='Okay', command = close_box), columnspan = 2)
+    tkwait.window(tt)
+    
+    stop()
+  }
+}
+
+
+

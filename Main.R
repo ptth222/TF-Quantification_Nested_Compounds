@@ -42,6 +42,7 @@ httr::set_config( config( ssl_verifypeer = 0L ) )
 ###########################
 
 user_interface()
+Labelling <- chosen_labeling
 
 
 
@@ -71,6 +72,12 @@ sequence_data <- sequence_read_check(metadata_file_path)
 sequence_empty_check(sequence_data)
 sequence_data <- sequence_column_check(sequence_data)
 
+
+## Isotopologue Database Checks
+Isotopologue_Database <- isotopologue_read_check(metadata_file_path)
+isotopologue_empty_check(Isotopologue_Database)
+Isotopologue_Database <- isotopologue_column_check(Isotopologue_Database)
+isotopologue_values_check(Isotopologue_Database)
 
 TF_FileList <- TF_reports_file_paths
 
@@ -156,15 +163,16 @@ report_empty_check(TempMatrix, TF_FileList[1])
 ## Check that the TraceFinder report has all the columns we require.
 TempMatrix <- report_column_check(TempMatrix, TF_FileList[1])
 
-## Remove the labeling off the end of the compound names in the TraceFinder reports so that
-## they can be compared with the names in the standard reference database.
-TF_compounds <- gsub("\\[(.*)\\]", "", TempMatrix$Target.Compound)
+TF_compounds <- TempMatrix$Target.Compounds
 
 ## Check that every standard compound in the database has a match in the TF report.
 standards_in_TF_reports(CompoundNamesAndFormulasSorted, TF_compounds)
 
-## Check that every unique compound has a formula.
-formulas_check(TempMatrix, TF_compounds)
+## Check that every compound has a formula.
+formulas_check(TempMatrix)
+
+## Check that every compound is in the Isotopologue_Database.
+isotopologue_check(TempMatrix)
 
 
 ##################################
@@ -174,13 +182,7 @@ formulas_check(TempMatrix, TF_compounds)
 ## Read in TF reports and put the peak areas into a matrix.
 temp_return <- read_TF_reports(TF_FileList, TempMatrix)
 PeakAreas <- temp_return$PeakAreas
-TF_labeling_type <- temp_return$TF_labeling_type
 
-## Check that all the TraceFinder reports have the same labeling.
-TF_labeling_check(TF_labeling_type)
-
-## If the program made it past the error check then all the TF files have the same labeling, so set the Labelling to it.
-Labelling <- TF_labeling_type$Labeling[1]
 
 
 ## Give the user a message so they know the program is working.
@@ -207,7 +209,7 @@ CompoundNamesAndFormulasForStripping <- correct_chemical_formulas(PeakAreas, Tem
 
 
 
-ForStripping <- build_final_matrix(Labelling, CompoundNamesAndFormulasForStripping, SampleNames, PeakAreas)
+ForStripping <- build_final_matrix(Labelling, CompoundNamesAndFormulasForStripping, SampleNames, PeakAreas, Isotopologue_Database)
 
 
 ## Destroy the box with the message about building the file for Galaxy.

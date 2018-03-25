@@ -6,9 +6,6 @@ read_TF_reports <- function(TF_FileList, TempMatrix){
   ## Create a matrix to hold peak area values from each report.
   PeakAreas<-matrix(NA, nrow = dim(TempMatrix)[1], ncol = length(TF_FileList ))
   
-  ## Create a list to keep track of the labeling type of each input TraceFinder file.
-  TF_labeling_type <- as.data.frame(TF_FileList, stringsAsFactors = FALSE)
-  TF_labeling_type$Labeling <- "NA"
   
   ## Loop through all of the reports and pull out the peak areas from each report into
   ## the PeakAreas matrix.
@@ -19,35 +16,10 @@ read_TF_reports <- function(TF_FileList, TempMatrix){
     TempMatrix <- TempMatrix[1:(dim(TempMatrix)[1]),]
     TempMatrix <- report_column_check(TempMatrix, TF_FileList[i])
     
-    ## Determine the labeling from the pattern in brackets at the end of the first compound name.
-    ## For example 13-BPG[C+0] or 13-BPG[C+0_N+0]
-    if(any(grepl("\\[C\\+[[:digit:]]_N\\+[[:digit:]]\\]", TempMatrix$Target.Compounds))){
-      TF_labeling_type$Labeling[i] <- "C13N15"
-    } else if(any(grepl("\\[C\\+[[:digit:]]\\]", TempMatrix$Target.Compounds))){
-      TF_labeling_type$Labeling[i] <- "C13"
-    } else {
-      
-      tt <- tktoplevel()
-      tkfocus(tt)
-      message_font <- tkfont.create(family = "Times New Roman", size = 14)
-      tkwm.title(tt, "Labeling Error")
-      tkgrid(ttklabel(tt, image = error_icon),
-             ttklabel(tt, text = "Could not determine labeling from TraceFinder compound names.",
-                      font = message_font), padx = 20, pady = 20)
-      close_box <- function(){
-        tkdestroy(tt)
-      }
-      tkgrid(tkbutton(tt, text='Okay', command = close_box), columnspan = 2)
-      tkwait.window(tt)
-      
-      stop()
-    }
-    
     PeakAreas[,i]= matrix(TempMatrix$Peak.Area)
-    gc()
   }
   
-  return(list(PeakAreas=PeakAreas, TF_labeling_type=TF_labeling_type))
+  return(list(PeakAreas=PeakAreas))
 }
 
 
@@ -59,11 +31,12 @@ read_TF_reports <- function(TF_FileList, TempMatrix){
 correct_chemical_formulas <- function(PeakAreas, TempMatrix){
   
   ## Create a matrix with the same number of rows as the data (PeakAreas) and 8 columns.
-  CompoundNamesAndFormulasForStripping <- as.data.frame(matrix("0", nrow = dim(PeakAreas)[1], ncol = 8), stringsAsFactors = FALSE)
+  CompoundNamesAndFormulasForStripping <- as.data.frame(matrix("0", nrow = dim(PeakAreas)[1], ncol = 9), stringsAsFactors = FALSE)
   
   ## Name the columns.
   colnames(CompoundNamesAndFormulasForStripping)=c("CompoundName",
                                                    "Formula",
+                                                   "mz",
                                                    "C_isomers",
                                                    "H_isomers",
                                                    "N_isomers",
@@ -76,12 +49,8 @@ correct_chemical_formulas <- function(PeakAreas, TempMatrix){
   ## Copy the formulas from the TraceFinder data.
   CompoundNamesAndFormulasForStripping$Formula <- as.character(TempMatrix$Formula)
   
-  ## Copy the formula down to all of the isomers.
-  for(i in 2:length(CompoundNamesAndFormulasForStripping$Formula)){
-    if(CompoundNamesAndFormulasForStripping$Formula[i] == ""){
-      CompoundNamesAndFormulasForStripping$Formula[i] <- CompoundNamesAndFormulasForStripping$Formula[i-1]
-    }
-  }
+  ## Copy the mz from the TraceFinder data.
+  CompoundNamesAndFormulasForStripping$mz <- as.numeric(TempMatrix$Quan.Peak)
   
   
   ## For each row in the data change the chemical formula to add in 1's to the formula name
@@ -133,39 +102,39 @@ correct_chemical_formulas <- function(PeakAreas, TempMatrix){
     ## Do this for each isomer element, Hydrogen, Nitrogen, etc.
     if (sum(match(elements,"C",nomatch=0))==1)
     {
-      CompoundNamesAndFormulasForStripping[i,3]=nums[match(elements,"C",nomatch=0)>0]
-    } else {
-      CompoundNamesAndFormulasForStripping[i,3] <- "NA"
-    }
-    if (sum(match(elements,"H",nomatch=0))==1)
-    {
-      CompoundNamesAndFormulasForStripping[i,4]=nums[match(elements,"H",nomatch=0)>0]
+      CompoundNamesAndFormulasForStripping[i,4]=nums[match(elements,"C",nomatch=0)>0]
     } else {
       CompoundNamesAndFormulasForStripping[i,4] <- "NA"
     }
+    if (sum(match(elements,"H",nomatch=0))==1)
+    {
+      CompoundNamesAndFormulasForStripping[i,5]=nums[match(elements,"H",nomatch=0)>0]
+    } else {
+      CompoundNamesAndFormulasForStripping[i,5] <- "NA"
+    }
     if (sum(match(elements,"N",nomatch=0))==1)
     {
-      CompoundNamesAndFormulasForStripping[i,5]=nums[match(elements,"N",nomatch=0)>0]
+      CompoundNamesAndFormulasForStripping[i,6]=nums[match(elements,"N",nomatch=0)>0]
     }  else {
-      CompoundNamesAndFormulasForStripping[i,5] <- "NA"
+      CompoundNamesAndFormulasForStripping[i,6] <- "NA"
     }
     if (sum(match(elements,"O",nomatch=0))==1)
     {
-      CompoundNamesAndFormulasForStripping[i,6]=nums[match(elements,"O",nomatch=0)>0]
+      CompoundNamesAndFormulasForStripping[i,7]=nums[match(elements,"O",nomatch=0)>0]
     } else {
-      CompoundNamesAndFormulasForStripping[i,6] <- "NA"
+      CompoundNamesAndFormulasForStripping[i,7] <- "NA"
     }
     if (sum(match(elements,"P",nomatch=0))==1)
     {
-      CompoundNamesAndFormulasForStripping[i,7]=nums[match(elements,"P",nomatch=0)>0]
+      CompoundNamesAndFormulasForStripping[i,8]=nums[match(elements,"P",nomatch=0)>0]
     }  else {
-      CompoundNamesAndFormulasForStripping[i,7] <- "NA"
+      CompoundNamesAndFormulasForStripping[i,8] <- "NA"
     }
     if (sum(match(elements,"S",nomatch=0))==1)
     {
-      CompoundNamesAndFormulasForStripping[i,8]=nums[match(elements,"S",nomatch=0)>0]
+      CompoundNamesAndFormulasForStripping[i,9]=nums[match(elements,"S",nomatch=0)>0]
     } else {
-      CompoundNamesAndFormulasForStripping[i,8] <- "NA"
+      CompoundNamesAndFormulasForStripping[i,9] <- "NA"
     }
   }
   
@@ -179,7 +148,7 @@ correct_chemical_formulas <- function(PeakAreas, TempMatrix){
 ## Put the peak areas and corrected chemical formulas into the final form to submit to Galaxy
 ##################################
 
-build_final_matrix <- function(Labelling, CompoundNamesAndFormulasForStripping, SampleNames, PeakAreas){
+build_final_matrix <- function(Labelling, CompoundNamesAndFormulasForStripping, SampleNames, PeakAreas, Isotopologue_Database){
 
   ## If the labelling is only C13 then make a matrix with 5 columns, otherwise if the 
   ## labelling is C13 and N15 then make a matrix with 6 columns.
@@ -206,36 +175,15 @@ build_final_matrix <- function(Labelling, CompoundNamesAndFormulasForStripping, 
     ## For each row in the data.
     for (j in 1:(dim(CompoundNamesAndFormulasForStripping)[1]))
     {
-      # if (PeakAreas[j,i]>0)
-      #  {
-      ## Strip off the labeling from the row name and put it in the temporary matrix.
-      TempForStripping[,1] <- strsplit(CompoundNamesAndFormulasForStripping[j,1],"\\[")[[1]][1]
+      ## Put the compound nae in the temporary matrix.
+      TempForStripping[,1] <- CompoundNamesAndFormulasForStripping[j,1]
       ## Put the chemical formula in the temporary matrix.
       TempForStripping[,2] <- CompoundNamesAndFormulasForStripping[j,2]
-      ## Get just the labeling from the row name and put it in a temporary variable.
-      ## ex. [C+0] becomes C+0 in the variable.
-      TempIsotoplogue <- regmatches(CompoundNamesAndFormulasForStripping[j,1], regexpr("\\[.+\\]", CompoundNamesAndFormulasForStripping[j,1]))
-      TempIsotoplogue <- gsub("\\[|\\]", "", TempIsotoplogue)
 
-      ## If there is no labeling at all on the row name then set the variable to 
-      ## C+0 or C+0_N+0 depending on which labelling has been done.
-      if (identical(TempIsotoplogue, character(0)))
-      {
-        if (Labelling=="C13"){
-          
-          TempIsotoplogue <- "C+0"
-          
-        } else if(Labelling == "C13N15"){
-          
-          TempIsotoplogue <- "C+0_N+0"
-          
-        }
-      }
-      
       if (Labelling=="C13")
       {
-        ## Get just the number from the labeling and put it in the temp matrix.
-        TempForStripping[,3]=strsplit(TempIsotoplogue,"+",fixed = TRUE)[[1]][2]
+        ## Put the isotopologue number in the temporary matrix.
+        TempForStripping[,3]=Isotopologue_Database[Isotopologue_Database[,c("CompoundName","mz")] == CompoundNamesAndFormulasForStripping[j,c(1,3)], "C_Isotopologue"]
         ## Put the full column name (sample name) in the temp matrix.
         TempForStripping[,4]=SampleNames[i]
         ## Put the peak area value in the temp matrix.
@@ -256,12 +204,8 @@ build_final_matrix <- function(Labelling, CompoundNamesAndFormulasForStripping, 
       if (Labelling=="C13N15")
       {
         
-        TempForStripping[,3]=strsplit(strsplit(TempIsotoplogue,"_",fixed = TRUE)[[1]][1],"+",fixed = TRUE)[[1]][2]
-        TempForStripping[,4]=strsplit(strsplit(TempIsotoplogue,"_",fixed = TRUE)[[1]][2],"+",fixed = TRUE)[[1]][2]
-        if (is.na(TempForStripping[, 4]))
-        {
-          TempForStripping[,4]=0
-        }
+        TempForStripping[,3]=TempForStripping[,3]=Isotopologue_Database[Isotopologue_Database[,c("CompoundName","mz")] == CompoundNamesAndFormulasForStripping[j,c(1,3)], "C_Isotopologue"]
+        TempForStripping[,4]=TempForStripping[,3]=Isotopologue_Database[Isotopologue_Database[,c("CompoundName","mz")] == CompoundNamesAndFormulasForStripping[j,c(1,3)], "N_Isotopologue"]
 
         TempForStripping[,5]=SampleNames[i]
         TempForStripping[,6]=PeakAreas[j,i]
