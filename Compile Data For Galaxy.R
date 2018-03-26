@@ -50,7 +50,7 @@ correct_chemical_formulas <- function(PeakAreas, TempMatrix){
   CompoundNamesAndFormulasForStripping$Formula <- as.character(TempMatrix$Formula)
   
   ## Copy the mz from the TraceFinder data.
-  CompoundNamesAndFormulasForStripping$mz <- as.numeric(TempMatrix$Quan.Peak)
+  CompoundNamesAndFormulasForStripping$mz <- as.numeric(as.character(TempMatrix$Quan.Peak))
   
   
   ## For each row in the data change the chemical formula to add in 1's to the formula name
@@ -183,7 +183,7 @@ build_final_matrix <- function(Labelling, CompoundNamesAndFormulasForStripping, 
       if (Labelling=="C13")
       {
         ## Put the isotopologue number in the temporary matrix.
-        TempForStripping[,3]=Isotopologue_Database[Isotopologue_Database[,c("CompoundName","mz")] == CompoundNamesAndFormulasForStripping[j,c(1,3)], "C_Isotopologue"]
+        TempForStripping[,3]=Isotopologue_Database[Isotopologue_Database$Unique_ID == paste(CompoundNamesAndFormulasForStripping[j,1], CompoundNamesAndFormulasForStripping[j,3], sep = " " ), "C_Isotopologue"]
         ## Put the full column name (sample name) in the temp matrix.
         TempForStripping[,4]=SampleNames[i]
         ## Put the peak area value in the temp matrix.

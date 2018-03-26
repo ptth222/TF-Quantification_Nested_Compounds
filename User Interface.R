@@ -94,8 +94,7 @@ user_interface <- function(){
       tkconfigure(error_label, text ="Error. Files not selected for every field.", foreground = "red")
     }
     else if(tclvalue(chosen_labeling) == "Choose One"){
-      tkgrid(ttklabel(error_frame,text = "Error. Please choose a type of labeling.", foreground = "red"))
-      tkgrid(error_frame, columnspan = 4)
+      tkconfigure(error_label, text = "Error. Please choose a type of labeling.", foreground = "red")
     }
     else{
       tclvalue(test) <- 1
@@ -111,6 +110,6 @@ user_interface <- function(){
   
   if(testval == 2) {stop()}
   
-  chosen_labeling <- tclvalue(chosen_labeling)
+  chosen_labeling <<- tclvalue(chosen_labeling)
 
 }

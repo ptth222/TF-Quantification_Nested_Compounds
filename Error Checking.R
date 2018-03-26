@@ -334,14 +334,9 @@ isotopologue_empty_check <- function(Isotopologue_Database){
 
 isotopologue_column_check <- function(Isotopologue_Database){
   ## Make sure it has the correct columns. If it doesn't have all of the columns then give the user a message box and quit the program.
-  if(Labelling == "C13"){
-    required_columns = c("CompoundName", "mz", "C_Isotopologue")
-  }
-  else if (Labelling == "C13N15"){
-    required_columns = c("CompoundName", "mz", "C_Isotopologue", "N_Isototpologue")
-  }
+  required_columns = c("CompoundName", "mz", "C_Isotopologue", "N_Isotopologue")
   
-  
+
   if(!all(required_columns %in% colnames(Isotopologue_Database))){
     
     ## Create a message box.
@@ -621,17 +616,18 @@ formulas_check <- function(TF_Report){
 ## Check that every compound is in the isotopologue database.
 ############################
 
-isotpologue_check <- function(TF_Report, Isotopologue_Database){
-  
-  if (!all(TF_Report[,c("Target.Compounds","Quan.Peak")] %in% Isotopologue_Database[, c("CompoundName", "mz")])){
+isotopologue_check <- function(TF_Report, Isotopologue_Database){
+  TF_report_concat = paste(TF_Report$Target.Compounds, TF_Report$Quan.Peak, sep = " ")
+
+  if (!all(TF_report_concat %in% Isotopologue_Database$Unique_ID)){
     
-    compounds <- TF_Report[!TF_Report[,c("Target.Compounds","Quan.Peak")] %in% Isotopologue_Database[, c("CompoundName", "mz")]]
+    compounds <- TF_Report[!(TF_report_concat %in% Isotopologue_Database$Unique_ID),c("Target.Compounds", "Quan.Peak")]
     tt <- tktoplevel()
     tkfocus(tt)
     message_font <- tkfont.create(family = "Times New Roman", size = 14)
     tkwm.title(tt, "Compound Error")
     tkgrid(ttklabel(tt, image = error_icon),
-           ttklabel(tt, text = paste("Not every compound in the TraceFinder files have a matching entry in the ICMS_Isotopologue_Submission sheet. \nThe compounds are:\n", paste(compounds, collapse = "\n")),
+           ttklabel(tt, text = paste("Not every compound and m/z combination in the TraceFinder files have a matching entry in the ICMS_Isotopologue_Submission sheet. \nThe compound and m/z combinations are:\n", paste(paste(compounds$Target.Compounds, compounds$Quan.Peak, sep = " "), collapse = "\n")),
                     font = message_font), padx = 20, pady = 20)
     close_box <- function(){
       tkdestroy(tt)

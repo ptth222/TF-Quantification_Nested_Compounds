@@ -17,12 +17,17 @@ library(dplyr)
 library(readxl)
 library(ggplot2)
 
-source("/Users/higashi/Quantification_Script/Helper Functions.R")
-source("/Users/higashi/Quantification_Script/User Interface.R")
-source("/Users/higashi/Quantification_Script/Compile Data For Galaxy.R")
-source("/Users/higashi/Quantification_Script/Error Checking.R")
-source("/Users/higashi/Quantification_Script/Talk to Galaxy.R")
-source("/Users/higashi/Quantification_Script/Functions After Galaxy.R")
+working_directory <- getwd()
+setwd("/Users/higashi/Quantification_Script_Nested_Compounds")
+
+source("Helper Functions.R")
+source("User Interface.R")
+source("Compile Data For Galaxy.R")
+source("Error Checking.R")
+source("Talk to Galaxy.R")
+source("Functions After Galaxy.R")
+
+setwd(working_directory)
 
 
 ## Create image files for warning and error messages.
@@ -78,6 +83,14 @@ Isotopologue_Database <- isotopologue_read_check(metadata_file_path)
 isotopologue_empty_check(Isotopologue_Database)
 Isotopologue_Database <- isotopologue_column_check(Isotopologue_Database)
 isotopologue_values_check(Isotopologue_Database)
+
+if (Labelling == "C13"){
+  Isotopologue_Database <- Isotopologue_Database[Isotopologue_Database$N_Isotopologue == 0,]
+}
+
+## Add a column to the database that is a concatenation of the compound name and m/z.
+## This is used to give each row a unique name to match with.
+Isotopologue_Database$Unique_ID <- paste(Isotopologue_Database$CompoundName, Isotopologue_Database$mz, sep = " ")
 
 TF_FileList <- TF_reports_file_paths
 
@@ -172,7 +185,7 @@ standards_in_TF_reports(CompoundNamesAndFormulasSorted, TF_compounds)
 formulas_check(TempMatrix)
 
 ## Check that every compound is in the Isotopologue_Database.
-isotopologue_check(TempMatrix)
+isotopologue_check(TempMatrix, Isotopologue_Database)
 
 
 ##################################
