@@ -36,7 +36,7 @@ correct_chemical_formulas <- function(PeakAreas, TempMatrix){
   ## Name the columns.
   colnames(CompoundNamesAndFormulasForStripping)=c("CompoundName",
                                                    "Formula",
-                                                   "mz",
+                                                   "Peak_Index",
                                                    "C_isomers",
                                                    "H_isomers",
                                                    "N_isomers",
@@ -49,8 +49,8 @@ correct_chemical_formulas <- function(PeakAreas, TempMatrix){
   ## Copy the formulas from the TraceFinder data.
   CompoundNamesAndFormulasForStripping$Formula <- as.character(TempMatrix$Formula)
   
-  ## Copy the mz from the TraceFinder data.
-  CompoundNamesAndFormulasForStripping$mz <- as.numeric(as.character(TempMatrix$Quan.Peak))
+  ## Copy the Peak_Index from the TraceFinder data.
+  CompoundNamesAndFormulasForStripping$Peak_Index <- as.numeric(as.character(TempMatrix$Conf.Peak.Index))
   
   
   ## For each row in the data change the chemical formula to add in 1's to the formula name
@@ -204,8 +204,8 @@ build_final_matrix <- function(Labelling, CompoundNamesAndFormulasForStripping, 
       if (Labelling=="C13N15")
       {
         
-        TempForStripping[,3]=TempForStripping[,3]=Isotopologue_Database[Isotopologue_Database[,c("CompoundName","mz")] == CompoundNamesAndFormulasForStripping[j,c(1,3)], "C_Isotopologue"]
-        TempForStripping[,4]=TempForStripping[,3]=Isotopologue_Database[Isotopologue_Database[,c("CompoundName","mz")] == CompoundNamesAndFormulasForStripping[j,c(1,3)], "N_Isotopologue"]
+        TempForStripping[,3]=Isotopologue_Database[Isotopologue_Database$Unique_ID == paste(CompoundNamesAndFormulasForStripping[j,1], CompoundNamesAndFormulasForStripping[j,3], sep = " " ), "C_Isotopologue"]
+        TempForStripping[,4]=Isotopologue_Database[Isotopologue_Database$Unique_ID == paste(CompoundNamesAndFormulasForStripping[j,1], CompoundNamesAndFormulasForStripping[j,3], sep = " " ), "N_Isotopologue"]
 
         TempForStripping[,5]=SampleNames[i]
         TempForStripping[,6]=PeakAreas[j,i]

@@ -84,13 +84,14 @@ isotopologue_empty_check(Isotopologue_Database)
 Isotopologue_Database <- isotopologue_column_check(Isotopologue_Database)
 isotopologue_values_check(Isotopologue_Database)
 
-if (Labelling == "C13"){
-  Isotopologue_Database <- Isotopologue_Database[Isotopologue_Database$N_Isotopologue == 0,]
-}
+## Commenting out for now because I don't think this is necessary.
+# if (Labelling == "C13"){
+#   Isotopologue_Database <- Isotopologue_Database[Isotopologue_Database$N_Isotopologue == 0,]
+# }
 
-## Add a column to the database that is a concatenation of the compound name and m/z.
+## Add a column to the database that is a concatenation of the compound name and peak index.
 ## This is used to give each row a unique name to match with.
-Isotopologue_Database$Unique_ID <- paste(Isotopologue_Database$CompoundName, Isotopologue_Database$mz, sep = " ")
+Isotopologue_Database$Unique_ID <- paste(Isotopologue_Database$CompoundName, Isotopologue_Database$Conf_Peak_Index, sep = " ")
 
 TF_FileList <- TF_reports_file_paths
 

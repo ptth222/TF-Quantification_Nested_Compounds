@@ -334,7 +334,7 @@ isotopologue_empty_check <- function(Isotopologue_Database){
 
 isotopologue_column_check <- function(Isotopologue_Database){
   ## Make sure it has the correct columns. If it doesn't have all of the columns then give the user a message box and quit the program.
-  required_columns = c("CompoundName", "mz", "C_Isotopologue", "N_Isotopologue")
+  required_columns = c("CompoundName", "Conf_Peak_Index", "C_Isotopologue", "N_Isotopologue")
   
 
   if(!all(required_columns %in% colnames(Isotopologue_Database))){
@@ -558,7 +558,7 @@ report_empty_check <- function(TempMatrix, TF_File){
 
 report_column_check <- function(TempMatrix, TF_File){
   ## Make sure it has the correct columns. If it doesn't have all of the columns then give the user a message box and quit the program.
-  if(!all(c("Target.Compounds", "Quan.Peak", "Formula", "Peak.Area") %in% colnames(TempMatrix))){
+  if(!all(c("Target.Compounds", "Conf.Peak.Index", "Formula", "Peak.Area") %in% colnames(TempMatrix))){
     
     ## Create a message box.
     tt <- tktoplevel()
@@ -617,17 +617,17 @@ formulas_check <- function(TF_Report){
 ############################
 
 isotopologue_check <- function(TF_Report, Isotopologue_Database){
-  TF_report_concat = paste(TF_Report$Target.Compounds, TF_Report$Quan.Peak, sep = " ")
+  TF_report_concat = paste(TF_Report$Target.Compounds, TF_Report$Conf.Peak.Index, sep = " ")
 
   if (!all(TF_report_concat %in% Isotopologue_Database$Unique_ID)){
     
-    compounds <- TF_Report[!(TF_report_concat %in% Isotopologue_Database$Unique_ID),c("Target.Compounds", "Quan.Peak")]
+    compounds <- TF_Report[!(TF_report_concat %in% Isotopologue_Database$Unique_ID),c("Target.Compounds", "Conf.Peak.Index")]
     tt <- tktoplevel()
     tkfocus(tt)
     message_font <- tkfont.create(family = "Times New Roman", size = 14)
     tkwm.title(tt, "Compound Error")
     tkgrid(ttklabel(tt, image = error_icon),
-           ttklabel(tt, text = paste("Not every compound and m/z combination in the TraceFinder files have a matching entry in the ICMS_Isotopologue_Submission sheet. \nThe compound and m/z combinations are:\n", paste(paste(compounds$Target.Compounds, compounds$Quan.Peak, sep = " "), collapse = "\n")),
+           ttklabel(tt, text = paste("Not every compound and m/z combination in the TraceFinder files have a matching entry in the ICMS_Isotopologue_Submission sheet. \nThe compound and m/z combinations are:\n", paste(paste(compounds$Target.Compounds, compounds$Conf.Peak.Index, sep = " "), collapse = "\n")),
                     font = message_font), padx = 20, pady = 20)
     close_box <- function(){
       tkdestroy(tt)
