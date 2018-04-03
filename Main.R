@@ -27,15 +27,16 @@ source("Error Checking.R")
 source("Talk to Galaxy.R")
 source("Functions After Galaxy.R")
 
-setwd(working_directory)
 
 
 ## Create image files for warning and error messages.
 ## For Windows you may need to use the .gif picture files instead of the.png.
 error_icon <- tclVar()
-tkimage.create("photo", error_icon, file = "/Users/higashi/Quantification_Script/Images/error-icon.png")
+tkimage.create("photo", error_icon, file = "Images/error-icon.png")
 warning_icon <- tclVar()
-tkimage.create("photo", warning_icon, file = "/Users/higashi/Quantification_Script/Images/warning-icon.png")
+tkimage.create("photo", warning_icon, file = "Images/warning-icon.png")
+
+setwd(working_directory)
 
 
 ## Tell httr not to worry about certificates.
